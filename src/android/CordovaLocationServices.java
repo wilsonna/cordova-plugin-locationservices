@@ -48,6 +48,7 @@ public class CordovaLocationServices extends CordovaPlugin implements
     private CordovaLocationListener mListener;
     private boolean mWantLastLocation = false;
     private boolean mWantUpdates = false;
+    private boolean isWatching = false;
     private String[] permissions = {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
     private JSONArray mPrevArgs;
     private CallbackContext mCbContext;
@@ -302,15 +303,20 @@ public class CordovaLocationServices extends CordovaPlugin implements
             e.printStackTrace();
             maximumAge = 0;
         }
-        Location last = LocationServices.FusedLocationApi
-                .getLastLocation(mGApiClient);
-        // Check if we can use lastKnownLocation to get a quick reading and use
-        // less battery
-        if (last != null
-                && (System.currentTimeMillis() - last.getTime()) <= maximumAge) {
-            PluginResult result = new PluginResult(PluginResult.Status.OK,
-                    returnLocationJSON(last));
-            callbackContext.sendPluginResult(result);
+
+        if (isWatching) {
+            Location last = LocationServices.FusedLocationApi
+                    .getLastLocation(mGApiClient);
+            // Check if we can use lastKnownLocation to get a quick reading and use
+            // less battery
+            if (last != null
+                    && (System.currentTimeMillis() - last.getTime()) <= maximumAge) {
+                PluginResult result = new PluginResult(PluginResult.Status.OK,
+                        returnLocationJSON(last));
+                callbackContext.sendPluginResult(result);
+            } else {
+                getCurrentLocation(callbackContext, Integer.MAX_VALUE);
+            }
         } else {
             getCurrentLocation(callbackContext, Integer.MAX_VALUE);
         }
@@ -324,6 +330,7 @@ public class CordovaLocationServices extends CordovaPlugin implements
     }
 
     private void clearWatch(String id) {
+        isWatching = false;
         getListener().clearWatch(id);
     }
 
@@ -332,6 +339,7 @@ public class CordovaLocationServices extends CordovaPlugin implements
     }
 
     private void addWatch(String timerId, CallbackContext callbackContext) {
+        isWatching = true;
         getListener().addWatch(timerId, callbackContext);
     }
 
