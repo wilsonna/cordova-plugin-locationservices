@@ -26,6 +26,8 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.provider.Settings;
+import android.content.Intent;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
@@ -44,6 +46,7 @@ public class CordovaLocationServices extends CordovaPlugin implements
         GoogleApiClient.ConnectionCallbacks {
 
     private static final int LOCATION_PERMISSION_REQUEST = 0;
+    private static String TAG = "CordovaLocationServices";
 
     private CordovaLocationListener mListener;
     private boolean mWantLastLocation = false;
@@ -134,9 +137,9 @@ public class CordovaLocationServices extends CordovaPlugin implements
      * @return True if the action was valid, or false if not.
      */
     public boolean execute(final String action, final JSONArray args,
-                           final CallbackContext callbackContext) {
+                           final CallbackContext callbackContext) throws JSONException {
 
-        if (action == null || !action.matches("getPermission|getLocation|addWatch|clearWatch")) {
+        if (action == null || !action.matches("getPermission|getLocation|addWatch|clearWatch|isLocationEnabled|switchToLocationSettings")) {
             return false;
         }
 
@@ -150,6 +153,31 @@ public class CordovaLocationServices extends CordovaPlugin implements
                 mCbContext = callbackContext;
                 requestPermissions(LOCATION_PERMISSION_REQUEST);
             }
+
+            return true;
+        }
+
+        if (action.equals("isLocationEnabled")) {
+            try {
+                if (isGpsLocationEnabled() || isNetworkLocationEnabled()) {
+                    PluginResult r = new PluginResult(PluginResult.Status.OK);
+                    callbackContext.sendPluginResult(r);
+                } else {
+                    PluginResult r = new PluginResult(PluginResult.Status.ERROR);
+                    callbackContext.sendPluginResult(r);
+                }
+
+                return true;
+            } catch(Exception e) {
+                PluginResult r = new PluginResult(PluginResult.Status.ERROR);
+                callbackContext.sendPluginResult(r);
+                return false;
+            }
+        }
+
+        if (action.equals("switchToLocationSettings")) {
+            switchToLocationSettings();
+            callbackContext.success();
 
             return true;
         }
@@ -341,6 +369,54 @@ public class CordovaLocationServices extends CordovaPlugin implements
     private void addWatch(String timerId, CallbackContext callbackContext) {
         isWatching = true;
         getListener().addWatch(timerId, callbackContext);
+    }
+
+    public boolean isGpsLocationEnabled() throws Exception {
+        int mode = getLocationMode();
+        boolean result = (mode == 3 || mode == 1) && hasPermisssion();
+        Log.d(TAG, "GPS enabled: " + result);
+        return result;
+    }
+
+    public boolean isNetworkLocationEnabled() throws Exception {
+        int mode = getLocationMode();
+        boolean result = (mode == 3 || mode == 2) && hasPermisssion();
+        Log.d(TAG, "Network enabled: " + result);
+        return result;
+    }    
+
+    public void switchToLocationSettings() {
+        Log.d(TAG, "Switch to Location Settings");
+        Intent settingsIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        cordova.getActivity().startActivity(settingsIntent);
+    }    
+
+    /**
+     * Returns current location mode
+     */
+    private int getLocationMode() throws Exception {
+
+        int mode;
+        if (Build.VERSION.SDK_INT >= 19){ // Kitkat and above
+            mode = Settings.Secure.getInt(this.cordova.getActivity().getContentResolver(), Settings.Secure.LOCATION_MODE);
+        }else{ // Pre-Kitkat
+            if(isLocationProviderEnabled(LocationManager.GPS_PROVIDER) && isLocationProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+                mode = 3;
+            }else if(isLocationProviderEnabled(LocationManager.GPS_PROVIDER)){
+                mode = 1;
+            }else if(isLocationProviderEnabled(LocationManager.NETWORK_PROVIDER)){
+                mode = 2;
+            }else{
+                mode = 0;
+            }
+        }
+        return mode;
+    }    
+
+    private boolean isLocationProviderEnabled(String provider) {
+
+        LocationManager locationManager = (LocationManager) this.cordova.getActivity().getSystemService(Context.LOCATION_SERVICE);
+        return locationManager.isProviderEnabled(provider);
     }
 
     private CordovaLocationListener getListener() {

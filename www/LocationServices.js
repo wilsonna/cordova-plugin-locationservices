@@ -84,6 +84,7 @@ function parseParameters(options) {
 
 // Returns a timeout failure, closed over a specified timeout value and error callback.
 function createTimeout(errorCallback, timeout) {
+  console.log('creating a new timeout for ', timeout);
   var t = setTimeout(function() {
     clearTimeout(t);
     t = null;
@@ -189,7 +190,12 @@ var LocationServicesWithoutPermission = {
     timers[id] = LocationServicesWithoutPermission.getCurrentPosition(successCallback, errorCallback, options);
 
     var fail = function(e) {
+      console.log('fail callback...');
       clearTimeout(timers[id].timer);
+      if (options.timeout !== Infinity) {
+          timers[id].timer = createTimeout(fail, options.timeout);
+      }
+
       var err = new PositionError(e.code, e.message);
       if (errorCallback) {
         errorCallback(err);
@@ -197,6 +203,7 @@ var LocationServicesWithoutPermission = {
     };
 
     var win = function(p) {
+      console.log('win callback...');
       clearTimeout(timers[id].timer);
       if (options.timeout !== Infinity) {
         timers[id].timer = createTimeout(fail, options.timeout);
@@ -260,10 +267,28 @@ var LocationServices = {
     };
 
     exec(win, errorCallback, 'LocationServices', 'getPermission', []);
-  }
+  },
+
+  isLocationEnabled: function(successCallback, errorCallback) {
+
+      exec(successCallback, errorCallback, "LocationServices", "isLocationEnabled", []);
+  },
+
+  switchToSettings: function() {
+
+    var successCallback = function(data) {
+      console.log('switch success callback', data);
+    };
+
+    var errorCallback = function(err) {
+      console.log('switch error callback', err);
+    };
+
+    exec(successCallback, errorCallback, "LocationServices", "switchToLocationSettings", []);
+  }  
 };
 
-LocationServicesWithoutPermission.priorities = {
+LocationServices.priorities = {
   PRIORITY_HIGH_ACCURACY: PRIORITY_HIGH_ACCURACY,
   PRIORITY_BALANCED_POWER_ACCURACY: PRIORITY_BALANCED_POWER_ACCURACY,
   PRIORITY_LOW_POWER: PRIORITY_LOW_POWER,
