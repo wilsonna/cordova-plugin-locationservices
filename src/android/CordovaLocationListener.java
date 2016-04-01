@@ -42,6 +42,7 @@ public class CordovaLocationListener implements LocationListener {
 
     protected boolean mIsRunning = false;
 
+    private static final float MIN_ACCURACY = 25.0f;
     private GoogleApiClient mGApiClient;
     private LocationRequest mLocationRequest;
     private CordovaLocationServices mOwner;
@@ -75,6 +76,7 @@ public class CordovaLocationListener implements LocationListener {
     @Override
     public void onLocationChanged(Location location) {
         Log.d(TAG, "The location has been updated!");
+
         win(location);
     }
 
@@ -93,9 +95,8 @@ public class CordovaLocationListener implements LocationListener {
     public void addWatch(String timerId, CallbackContext callbackContext) {
         watches.put(timerId, callbackContext);
 
-        if (size() == 1) {
-            start();
-        }
+        stop();
+        start();
     }
 
     public void addCallback(CallbackContext callbackContext, int timeout) {
@@ -106,9 +107,8 @@ public class CordovaLocationListener implements LocationListener {
         mTimer.schedule(new LocationTimeoutTask(callbackContext, this), timeout);
         mCallbacks.add(callbackContext);
 
-        if (size() == 1) {
-            start();
-        }
+        stop();
+        start();
     }
 
     public void clearWatch(String timerId) {

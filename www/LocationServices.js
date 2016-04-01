@@ -187,11 +187,14 @@ var LocationServicesWithoutPermission = {
     var id = watchId ? watchId : utils.createUUID();
 
     // Tell device to get a position ASAP, and also retrieve a reference to the timeout timer generated in getCurrentPosition
-    timers[id] = LocationServicesWithoutPermission.getCurrentPosition(successCallback, errorCallback, options);
+    // timers[id] = LocationServicesWithoutPermission.getCurrentPosition(successCallback, errorCallback, options);
+    timers[id] = {
+      timer: null
+    };
 
     var fail = function(e) {
       console.log('fail callback...');
-      clearTimeout(timers[id].timer);
+      timers[id].timer && clearTimeout(timers[id].timer);
       if (options.timeout !== Infinity) {
           timers[id].timer = createTimeout(fail, options.timeout);
       }
@@ -204,7 +207,7 @@ var LocationServicesWithoutPermission = {
 
     var win = function(p) {
       console.log('win callback...');
-      clearTimeout(timers[id].timer);
+      timers[id].timer && clearTimeout(timers[id].timer);
       if (options.timeout !== Infinity) {
         timers[id].timer = createTimeout(fail, options.timeout);
       }

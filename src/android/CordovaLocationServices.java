@@ -206,6 +206,9 @@ public class CordovaLocationServices extends CordovaPlugin implements
                 mGApiClient.connect();
             }
             if (action.equals("getLocation")) {
+                getListener().setLocationRequestParams(LocationRequest.PRIORITY_HIGH_ACCURACY,
+                        LocationUtils.UPDATE_INTERVAL_IN_MILLISECONDS, LocationUtils.FAST_INTERVAL_CEILING_IN_MILLISECONDS);
+                
                 if (mGApiClient.isConnected()) {
                     getLastLocation(args, callbackContext);
                 } else {
@@ -332,22 +335,24 @@ public class CordovaLocationServices extends CordovaPlugin implements
             maximumAge = 0;
         }
 
-        if (isWatching) {
-            Location last = LocationServices.FusedLocationApi
-                    .getLastLocation(mGApiClient);
-            // Check if we can use lastKnownLocation to get a quick reading and use
-            // less battery
-            if (last != null
-                    && (System.currentTimeMillis() - last.getTime()) <= maximumAge) {
-                PluginResult result = new PluginResult(PluginResult.Status.OK,
-                        returnLocationJSON(last));
-                callbackContext.sendPluginResult(result);
-            } else {
-                getCurrentLocation(callbackContext, Integer.MAX_VALUE);
-            }
-        } else {
-            getCurrentLocation(callbackContext, Integer.MAX_VALUE);
-        }
+        getCurrentLocation(callbackContext, Integer.MAX_VALUE);;
+
+        // if (isWatching) {
+        //     Location last = LocationServices.FusedLocationApi
+        //             .getLastLocation(mGApiClient);
+        //     // Check if we can use lastKnownLocation to get a quick reading and use
+        //     // less battery
+        //     if (last != null
+        //             && (System.currentTimeMillis() - last.getTime()) <= maximumAge) {
+        //         PluginResult result = new PluginResult(PluginResult.Status.OK,
+        //                 returnLocationJSON(last));
+        //         callbackContext.sendPluginResult(result);
+        //     } else {
+        //         getCurrentLocation(callbackContext, Integer.MAX_VALUE);
+        //     }
+        // } else {
+        //     getCurrentLocation(callbackContext, Integer.MAX_VALUE);
+        // }
     }
 
     private void setWantLastLocation(JSONArray args,
