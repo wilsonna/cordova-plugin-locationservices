@@ -84,7 +84,7 @@ function parseParameters(options) {
 
 // Returns a timeout failure, closed over a specified timeout value and error callback.
 function createTimeout(errorCallback, timeout) {
-  console.log('creating a new timeout for ', timeout);
+  // console.log('creating a new timeout for ', timeout);
   var t = setTimeout(function() {
     clearTimeout(t);
     t = null;
@@ -193,11 +193,11 @@ var LocationServicesWithoutPermission = {
     };
 
     var fail = function(e) {
-      console.log('fail callback...');
+      // console.log('fail callback...');
       timers[id].timer && clearTimeout(timers[id].timer);
-      if (options.timeout !== Infinity) {
-          timers[id].timer = createTimeout(fail, options.timeout);
-      }
+      // if (options.timeout !== Infinity) {
+      //     timers[id].timer = createTimeout(fail, options.timeout);
+      // }
 
       var err = new PositionError(e.code, e.message);
       if (errorCallback) {
@@ -206,11 +206,11 @@ var LocationServicesWithoutPermission = {
     };
 
     var win = function(p) {
-      console.log('win callback...');
+      // console.log('win callback...');
       timers[id].timer && clearTimeout(timers[id].timer);
-      if (options.timeout !== Infinity) {
-        timers[id].timer = createTimeout(fail, options.timeout);
-      }
+      // if (options.timeout !== Infinity) {
+      //   timers[id].timer = createTimeout(fail, options.timeout);
+      // }
       var pos = new Position({
         latitude: p.latitude,
         longitude: p.longitude,
